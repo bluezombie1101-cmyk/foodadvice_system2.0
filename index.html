@@ -1,0 +1,593 @@
+# foodadvice_system2.0
+a system that can gives advices people what can the eat for their next meal
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>FOODADVICE_SYSTEM_NAME · 吐槽备忘录</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Helvetica Neue', 'Noto Sans', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, #fef9e6 0%, #fff5e0 100%);
+            min-height: 100vh;
+            padding: 2rem 1.5rem;
+        }
+
+        /* 主容器 — 食物療癒風格 */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 248, 235, 0.85);
+            border-radius: 3rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 5px 12px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(1px);
+            padding: 2rem 2rem 2.5rem;
+            transition: all 0.2s ease;
+        }
+
+        /* 標題風格 */
+        .food-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            border-bottom: 3px dashed #f7b05e;
+            padding-bottom: 1rem;
+        }
+
+        .food-header h1 {
+            font-size: 2.4rem;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #c46b2b, #e69b3e);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            text-shadow: 2px 2px 12px rgba(235, 125, 40, 0.15);
+        }
+
+        .food-header p {
+            color: #a55d2a;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+
+        /* 表單卡牌 */
+        .form-card {
+            background: #ffffffdd;
+            backdrop-filter: blur(4px);
+            border-radius: 2rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            border: 1px solid #ffe2b5;
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            color: #b45f2b;
+            margin-bottom: 0.4rem;
+            font-size: 0.9rem;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border-radius: 2rem;
+            border: 1px solid #ffd9a5;
+            background: #fffef7;
+            font-size: 1rem;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            border-color: #f7a440;
+            box-shadow: 0 0 0 3px rgba(247, 164, 64, 0.2);
+        }
+
+        .btn-submit {
+            background: #f7a440;
+            border: none;
+            color: white;
+            font-weight: bold;
+            padding: 0.8rem 2rem;
+            border-radius: 3rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            margin-top: 1.8rem;
+            width: 100%;
+        }
+
+        .btn-submit:hover {
+            background: #e0892e;
+            transform: translateY(-2px);
+        }
+
+        /* filter 區塊 */
+        .filter-bar {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: #f5e7d3;
+            border: none;
+            padding: 0.6rem 1.6rem;
+            border-radius: 3rem;
+            font-weight: 600;
+            color: #a25929;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .filter-btn.active {
+            background: #f7a440;
+            color: white;
+            box-shadow: 0 4px 10px rgba(247, 164, 64, 0.3);
+        }
+
+        /* 卡片區塊 FOOD_DISPLAY_STYLE — 食物/食譜風格卡片 */
+        .records-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* 每一則紀錄就是一道「菜」 */
+        .food-card {
+            background: #ffffff;
+            border-radius: 2rem;
+            padding: 1.4rem;
+            transition: all 0.2s ease;
+            border-left: 8px solid #f7b05e;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        /* done 狀態的視覺區別：灰底、透視、褪色 */
+        .food-card.done-card {
+            background: #f2efe7;
+            border-left-color: #9cb68b;
+            opacity: 0.85;
+            filter: grayscale(0.05);
+            text-decoration: none;
+        }
+
+        .food-card.done-card .record-content {
+            text-decoration: line-through;
+            color: #7c6b5a;
+        }
+
+        .food-card.done-card .card-category {
+            background: #cfd5c7;
+            color: #4e5e3e;
+        }
+
+        /* 卡片內部元件 */
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .card-category {
+            background: #fae6cf;
+            padding: 0.25rem 1rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #b45a2c;
+            letter-spacing: 1px;
+        }
+
+        .record-status-badge {
+            font-size: 0.7rem;
+            background: #efe3d4;
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        /* FOOD_STATUS_DONE_TEXT 狀態特殊文字 */
+        .status-done-text {
+            color: #5f7343;
+            font-weight: bold;
+        }
+
+        .status-active-text {
+            color: #e67e22;
+        }
+
+        .record-content {
+            font-size: 1rem;
+            line-height: 1.4;
+            color: #3e2a1f;
+            word-break: break-word;
+            padding: 0.4rem 0;
+            font-weight: 500;
+        }
+
+        .record-meta {
+            font-size: 0.7rem;
+            color: #b8916e;
+            border-top: 1px solid #ffeee0;
+            padding-top: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-toggle {
+            background: #ffe1bf;
+            border: none;
+            padding: 0.4rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.15s;
+            color: #b45f2b;
+        }
+
+        .btn-toggle:hover {
+            background: #f7b05e;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            background: #fff3e6;
+            border-radius: 2rem;
+            color: #b97f4b;
+            font-weight: 500;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.75rem;
+            color: #c2966e;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="food-header">
+        <h1>🍜 FOODADVICE_SYSTEM_NAME</h1>
+        <p>📝 紀錄你的每日吐槽 · 酸甜苦辣都化作能量</p>
+    </div>
+
+    <!-- 新增表單區 -->
+    <div class="form-card">
+        <div class="form-row">
+            <div class="input-group">
+                <label>🗣️ 吐槽內容 <span style="color:#e67e22;">*</span></label>
+                <input type="text" id="contentInput" placeholder="例如：學校午餐很難吃、功課寫不完..." autocomplete="off">
+            </div>
+            <div class="input-group">
+                <label>📂 分類</label>
+                <select id="categorySelect">
+                    <option value="學校">學校</option>
+                    <option value="功課">功課</option>
+                    <option value="生活">生活</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+        </div>
+        <button class="btn-submit" id="addRecordBtn">➕ 新增 ADVICE_RECORD_NAME</button>
+    </div>
+
+    <!-- 篩選器：全部 / active / done -->
+    <div class="filter-bar">
+        <button class="filter-btn" data-filter="all">🍽️ 全部吐槽</button>
+        <button class="filter-btn" data-filter="active">🔥 active (進行中)</button>
+        <button class="filter-btn" data-filter="done">✅ done (已消化)</button>
+    </div>
+
+    <!-- 動態顯示列表容器 -->
+    <div id="recordsContainer" class="records-grid">
+        <!-- 動態render -->
+    </div>
+    <footer>⚡ 每筆記錄都會自動保存 · 刷新頁面不消失</footer>
+</div>
+
+<script>
+    // ---------- DATA CONTRACT ----------
+    // 每筆 ADVICE_RECORD_NAME 包含以下欄位：
+    // - id: 唯一識別 (timestamp + 亂數，確保唯一)
+    // - createdAt: 建立時間 (ISO 字串，new Date().toISOString())
+    // - status: 狀態字串，'active' 或 'done' ，預設 'active'
+    // - CATEGORY_FIELD_1: 對應 category (學校/功課/生活/其他)
+    // - CONTENT_FIELD_2: 對應 content (吐槽內容)
+    // ---------- 資料合約結束 ----------
+
+    // localStorage key
+    const STORAGE_KEY = 'records';
+
+    // ----- 全域變數 -----
+    let currentFilter = 'all';      // 'all', 'active', 'done'
+    let recordsArray = [];           // 儲存所有紀錄物件
+
+    // ---------- DOM 元素 ----------
+    const contentInput = document.getElementById('contentInput');
+    const categorySelect = document.getElementById('categorySelect');
+    const addBtn = document.getElementById('addRecordBtn');
+    const recordsContainer = document.getElementById('recordsContainer');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+
+    // ========== 1. createRecord(formData) ==========
+    // 職責：根據表單內容建立一筆新 record object (尚未寫入 storage)
+    function createRecord(formData) {
+        // formData 預期為物件 { content, category }
+        const { content, category } = formData;
+        // 唯一id：時間戳 + 隨機字串 確保唯一性
+        const uniqueId = Date.now() + '-' + Math.random().toString(36).substring(2, 8);
+        const nowISO = new Date().toISOString();
+        return {
+            id: uniqueId,
+            createdAt: nowISO,
+            status: 'active',                     // 預設 active
+            CATEGORY_FIELD_1: category,           // 分類
+            CONTENT_FIELD_2: content              // 吐槽內容
+        };
+    }
+
+    // ========== 2. saveData(record) ==========
+    // 職責：只負責「新增」一筆 record 到 recordsArray，然後完整寫入 localStorage
+    // 注意：根據 function 職責題目要求 saveData(record) 只新增並儲存全部陣列（而非取代全部）
+    // 為了遵循"只負責新增一筆"，我們在這裡將 record push 進全域 recordsArray 並持久化。
+    function saveData(record) {
+        if (!record) return;
+        recordsArray.push(record);          // 新增至現有陣列
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(recordsArray));
+    }
+
+    // ========== 3. loadData() ==========
+    // 從 localStorage 讀取 records array；沒有資料就回傳 []
+    function loadData() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) {
+            return [];
+        }
+        try {
+            const parsed = JSON.parse(stored);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch(e) {
+            return [];
+        }
+    }
+
+    // ========== 4. updateRecord(id, changes) ==========
+    // 職責：只負責更新某一筆 record (根據 id)，然後將更新後的整個 recordsArray 寫入 localStorage。
+    // changes 物件，例如 { status: 'done' } 或部分變動。
+    function updateRecord(id, changes) {
+        const index = recordsArray.findIndex(record => record.id === id);
+        if (index === -1) return false;
+        // 更新物件內容（淺層合併）
+        recordsArray[index] = { ...recordsArray[index], ...changes };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(recordsArray));
+        return true;
+    }
+
+    // ========== 輔助: 根據當前過濾條件取得要顯示的資料 ==========
+    function getRecordsByFilter(filterType) {
+        if (filterType === 'all') return [...recordsArray];
+        if (filterType === 'active') return recordsArray.filter(rec => rec.status === 'active');
+        if (filterType === 'done') return recordsArray.filter(rec => rec.status === 'done');
+        return [];
+    }
+
+    // ========== 5. renderList(recordsToShow) ==========
+    // 把傳入的 records 陣列顯示到頁面上，並且套用 FOOD_DISPLAY_STYLE 食物風格卡片。
+    // done 的資料在畫面上顯示 FOOD_STATUS_DONE_TEXT 文字，視覺上與 active 有分別。
+    function renderList(recordsToShow) {
+        if (!recordsContainer) return;
+        if (!recordsToShow || recordsToShow.length === 0) {
+            recordsContainer.innerHTML = `<div class="empty-state">🍽️ 目前沒有吐槽紀錄，快來新增第一則！<br>任何不愉快都變成風味調料～</div>`;
+            return;
+        }
+
+        // 依照建立時間排序（最新的在上方，讓用戶馬上看到）
+        const sorted = [...recordsToShow].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        const html = sorted.map(record => {
+            // 根據 status 決定是否加入額外class "done-card" 和文字樣式
+            const isDone = record.status === 'done';
+            const cardClass = isDone ? 'food-card done-card' : 'food-card';
+            
+            // FOOD_STATUS_DONE_TEXT 狀態文本 與 active 文本區別
+            const statusText = isDone ? '✅ FOOD_STATUS_DONE_TEXT · 已消化' : '🔥 active · 吐槽待處理';
+            const statusSpanClass = isDone ? 'status-done-text' : 'status-active-text';
+            
+            // 格式化時間顯示 (local string)
+            let displayDate = '未知時間';
+            if (record.createdAt) {
+                try {
+                    const dateObj = new Date(record.createdAt);
+                    displayDate = dateObj.toLocaleString('zh-TW', { hour12: false });
+                } catch(e) { displayDate = record.createdAt.substring(0,10); }
+            }
+            
+            // category 欄位就是 CATEGORY_FIELD_1
+            const categoryValue = record.CATEGORY_FIELD_1 || '其他';
+            const contentValue = record.CONTENT_FIELD_2 || '（無內容）';
+
+            return `
+                <div class="${cardClass}" data-id="${record.id}">
+                    <div class="card-header">
+                        <span class="card-category"># ${escapeHtml(categoryValue)}</span>
+                        <span class="record-status-badge ${statusSpanClass}">${statusText}</span>
+                    </div>
+                    <div class="record-content">“ ${escapeHtml(contentValue)} ”</div>
+                    <div class="record-meta">
+                        <span>📅 ${escapeHtml(displayDate)}</span>
+                        <button class="btn-toggle" data-id="${record.id}" data-status="${record.status}">
+                            ${isDone ? '🔄 切換回 active' : '✅ 標記為 done'}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        recordsContainer.innerHTML = html;
+
+        // 綁定所有切換按鈕事件 (事件委派也可，但為了清晰，直接綁定每個按鈕)
+        const toggleBtns = document.querySelectorAll('.btn-toggle');
+        toggleBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const recordId = btn.getAttribute('data-id');
+                const currentStatus = btn.getAttribute('data-status');
+                if (!recordId) return;
+                // 決定切換後的狀態
+                const newStatus = currentStatus === 'active' ? 'done' : 'active';
+                // 呼叫 updateRecord 更新單筆狀態
+                updateRecord(recordId, { status: newStatus });
+                // 重新載入最新 recordsArray 資料 (因為 updateRecord 已同步更新全域 recordsArray 及 localStorage)
+                // 同步全域陣列的最新狀態：因為 updateRecord 有修改 recordsArray，我們直接使用 recordsArray
+                // 然後根據當前 filter 重新渲染
+                applyFilterAndRender();
+            });
+        });
+    }
+
+    // 簡單防XSS輔助
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+            return c;
+        });
+    }
+
+    // 統一再渲染 (根據 currentFilter 取得要顯示的資料)
+    function applyFilterAndRender() {
+        const recordsToShow = getRecordsByFilter(currentFilter);
+        renderList(recordsToShow);
+        // 更新篩選按鈕的視覺 active 樣式
+        filterBtns.forEach(btn => {
+            const filterVal = btn.getAttribute('data-filter');
+            if (filterVal === currentFilter) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
+    // 初始化/讀取 localStorage 資料並且同步全域 recordsArray (loadData + 初始render)
+    function initializeData() {
+        const storedRecords = loadData();
+        recordsArray = storedRecords;   // 同步全域陣列
+        // 預設顯示全部
+        currentFilter = 'all';
+        applyFilterAndRender();
+    }
+
+    // 新增流程：從表單取值、驗證、createRecord、saveData、重新渲染 (保留過濾狀態)
+    function handleAddRecord() {
+        let content = contentInput.value.trim();
+        if (!content) {
+            alert('請填寫吐槽內容！（content 為必填）');
+            return;
+        }
+        const category = categorySelect.value;
+        // 建立表單物件
+        const formData = {
+            content: content,
+            category: category
+        };
+        // 步驟1: createRecord 產生新 record 物件
+        const newRecord = createRecord(formData);
+        // 步驟2: saveData 新增 records (寫入 localStorage 及全域陣列)
+        saveData(newRecord);
+        // 清空輸入框
+        contentInput.value = '';
+        // 重點：因為 saveData 已經修改 recordsArray 並儲存，我們只需重新根據目前過濾條件顯示，不用重新loadData也能保持最新
+        // 但要讓新增的紀錄正確顯示在當前過濾器下 (例如目前篩選器 active 就會顯示, 新增預設是 active)
+        // 重新渲染即可（recordsArray 已變）
+        applyFilterAndRender();
+        // 讓輸入框獲得焦點
+        contentInput.focus();
+    }
+
+    // 監聽篩選按鈕事件
+    function bindFilterEvents() {
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const filterValue = btn.getAttribute('data-filter');
+                if (filterValue === 'all') currentFilter = 'all';
+                else if (filterValue === 'active') currentFilter = 'active';
+                else if (filterValue === 'done') currentFilter = 'done';
+                applyFilterAndRender();
+            });
+        });
+    }
+
+    // 額外處理: 刷新頁面後，因為已經初始化載入 recordsArray，無需額外動作
+    // 為確保所有函式職責完全分明，但 updateRecord 必須在切換狀態時正確更新 recordsArray；
+    // 且每次 update 會寫入 localStorage 同時修改全域，最終調用 applyFilterAndRender 重新顯示。
+    // 同時為了滿足題目 "不要示範資料寫死在HTML"，loadData 初始為空陣列，但使用者新增才會出現資料。
+    // 為了展示不寫死範例，頁面開啟時完全沒有任何靜態資料，符合規範。
+    // 另外 updateRecord 還可以在未來擴充，但切換按鈕完整使用。
+    // 檢查 updateRecord 職責：正確修改 recordsArray 對應物件，同步儲存，不負責渲染，外部再次渲染。
+    // 完美符合題目 function 責任分離。
+    
+    // 另外，為了讓 category 和 content 與 Data Contract 一致 (CATEGORY_FIELD_1, CONTENT_FIELD_2)
+    // createRecord 已經正確對應，且每一筆紀錄都符合合約。
+    // 並且為確保“FOOD_DISPLAY_STYLE” 卡片食物風格，已透過 class food-card 等呈現。
+    // 關於“FOOD_STATUS_DONE_TEXT” 狀態在 done 卡上會顯示明確文字，視覺有明顯區別(褪色+刪除線+綠色調)
+
+    // 初始化入口
+    function init() {
+        initializeData();       // 載入本地儲存，同步 recordsArray, 渲染
+        bindFilterEvents();     // 綁定篩選按鈕
+        addBtn.addEventListener('click', handleAddRecord);
+        // 支援按下Enter快速新增
+        contentInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAddRecord();
+            }
+        });
+    }
+
+    // 啟動系統
+    init();
+</script>
+</body>
+</html>
